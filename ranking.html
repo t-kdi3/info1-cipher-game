@@ -7,21 +7,28 @@
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<main class="container">
+<main class="container ranking-container">
     <section class="page-card">
-        <h1>ランキング・クラス平均</h1>
+        <h1>結果ランキング・クラス平均</h1>
         <p id="loadStatus" class="notice" role="status" aria-live="polite"></p>
-        <h2>全問クリアランキング</h2>
+        <h2>全問正解のタイムランキング（個人）</h2>
         <div class="table-scroll">
             <table id="rankingTable">
                 <thead><tr><th>順位</th><th>クラス</th><th>出席番号</th><th>クリアタイム</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
-        <h2>クラス別 平均正答数</h2>
+        <h2>問題別の最速解答タイム（個人）</h2>
+        <div class="table-scroll">
+            <table id="puzzleRankingTable">
+                <thead><tr><th>問題</th><th>クラス</th><th>出席番号</th><th>解答タイム</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <h2>クラス別の平均回答完了数</h2>
         <div class="table-scroll">
             <table id="averageTable">
-                <thead><tr><th>クラス</th><th>平均正答数</th><th>参加人数</th></tr></thead>
+                <thead><tr><th>クラス</th><th>平均回答完了数</th><th>参加人数</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
@@ -34,7 +41,9 @@
 <script>
 const loadStatus = document.getElementById("loadStatus");
 const rankingBody = document.querySelector("#rankingTable tbody");
+const puzzleRankingBody = document.querySelector("#puzzleRankingTable tbody");
 const averageBody = document.querySelector("#averageTable tbody");
+const countedPuzzles = GAME_PUZZLES.filter((puzzle) => puzzle.counted);
 
 function addCell(row, value) {
     const cell = document.createElement("td");
@@ -44,7 +53,7 @@ function addCell(row, value) {
 
 function displayFailure(message) {
     loadStatus.textContent = message;
-    [[rankingBody, 4], [averageBody, 3]].forEach(([body, columns]) => {
+    [[rankingBody, 4], [puzzleRankingBody, 4], [averageBody, 3]].forEach(([body, columns]) => {
         body.replaceChildren();
         const row = document.createElement("tr");
         const cell = document.createElement("td");
@@ -86,6 +95,36 @@ async function loadRanking() {
             rankingBody.append(row);
         }
 
+        puzzleRankingBody.replaceChildren();
+        if (!Array.isArray(data.puzzleRankings)) {
+            const row = document.createElement("tr");
+            const cell = document.createElement("td");
+            cell.colSpan = 4;
+            cell.textContent = "問題別ランキングは、記録APIの更新後に表示されます。";
+            row.append(cell);
+            puzzleRankingBody.append(row);
+        } else {
+            const fastestByPuzzle = new Map(
+                data.puzzleRankings.map((record) => [record.puzzleId, record])
+            );
+            countedPuzzles.forEach((puzzle) => {
+                const row = document.createElement("tr");
+                addCell(row, puzzle.title);
+                const record = fastestByPuzzle.get(puzzle.id);
+                if (record) {
+                    addCell(row, String(record.className));
+                    addCell(row, String(record.studentNumber));
+                    addCell(row, Game.formatSeconds(Number(record.elapsedSeconds)));
+                } else {
+                    const cell = document.createElement("td");
+                    cell.colSpan = 3;
+                    cell.textContent = "記録なし";
+                    row.append(cell);
+                }
+                puzzleRankingBody.append(row);
+            });
+        }
+
         averageBody.replaceChildren();
         data.classAverages.forEach((record) => {
             const row = document.createElement("tr");
@@ -102,7 +141,9 @@ async function loadRanking() {
             row.append(cell);
             averageBody.append(row);
         }
-        loadStatus.textContent = "最新の記録を表示しています。";
+        loadStatus.textContent = Array.isArray(data.puzzleRankings)
+            ? "最新の記録を表示しています。"
+            : "全問ランキングとクラス平均を表示しています。問題別ランキングには記録APIの更新が必要です。";
     } catch (error) {
         console.error("ランキングの読み込みに失敗しました。", error);
         displayFailure(`ランキングを取得できませんでした。${error.message}`);

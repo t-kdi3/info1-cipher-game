@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>バイナリ末尾ビューア</title>
+<style>
+    body {
+        max-width: 900px;
+        margin: 24px auto;
+        padding: 0 16px;
+        color: #333;
+        font-family: sans-serif;
+        line-height: 1.6;
+    }
+
+    h1 {
+        font-size: 1.5rem;
+    }
+
+    pre {
+        overflow-x: auto;
+        padding: 16px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        background: #f5f6f8;
+        font: 14px/1.5 monospace;
+    }
+
+    #message {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+</style>
+</head>
+<body>
+<main>
+    <h1>バイナリエディタ（閲覧用）</h1>
+    <p>ファイルを選ぶと、末尾の16進数とテキストを表示します。ファイルは端末内で処理され、アップロードされません。</p>
+    <label for="file">調べるファイル</label>
+    <input id="file" type="file">
+    <p id="status" role="status" aria-live="polite"></p>
+    <h2>ファイル末尾のテキスト</h2>
+    <pre id="message">ファイルを選択してください。</pre>
+    <h2>末尾の16進数表示（最大512バイト）</h2>
+    <pre id="hex"></pre>
+</main>
+<script>
+const fileInput = document.getElementById("file");
+const status = document.getElementById("status");
+const message = document.getElementById("message");
+const hex = document.getElementById("hex");
+
+fileInput.addEventListener("change", async () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    status.textContent = `${file.name}（${file.size.toLocaleString()} バイト）`;
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const jpegEnd = bytes[0] === 0xff && bytes[1] === 0xd8
+        ? findJpegEnd(bytes)
+        : -1;
+    const textStart = jpegEnd >= 0 ? jpegEnd : Math.max(0, bytes.length - 4096);
+    const trailingBytes = bytes.subarray(textStart);
+    let trailingText;
+    try {
+        trailingText = new TextDecoder("utf-8", { fatal: true }).decode(trailingBytes);
+    } catch {
+        trailingText = new TextDecoder("shift_jis").decode(trailingBytes);
+    }
+    trailingText = trailingText.trim();
+    message.textContent = trailingText || "ファイル末尾にテキストは見つかりませんでした。";
+
+    const start = Math.max(0, bytes.length - 512);
+    const rows = [];
+    for (let offset = start; offset < bytes.length; offset += 16) {
+        const row = bytes.subarray(offset, Math.min(offset + 16, bytes.length));
+        const hexBytes = Array.from(row, (byte) => byte.toString(16).padStart(2, "0")).join(" ");
+        const text = Array.from(row, (byte) =>
+            byte >= 0x20 && byte <= 0x7e ? String.fromCharCode(byte) : "."
+        ).join("");
+        rows.push(`${offset.toString(16).padStart(8, "0")}  ${hexBytes.padEnd(47)}  ${text}`);
+    }
+    hex.textContent = rows.join("\n");
+});
+
+function findJpegEnd(bytes) {
+    for (let i = bytes.length - 2; i >= 0; i--) {
+        if (bytes[i] === 0xff && bytes[i + 1] === 0xd9) return i + 2;
+    }
+    return -1;
+}
+</script>
+</body>
+</html>

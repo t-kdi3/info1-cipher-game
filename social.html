@@ -11,7 +11,7 @@
     <section class="page-card">
         <h1>7：ソーシャルエンジニアリング</h1>
         <div id="timer" class="timer"></div>
-        <p>7-1・7-2の両方を解いてください。</p>
+        <p class="notice">『メモはきっちりゴミ袋に処分しました。7-1,7-2のヒントはもうありません。』</p>
         <div id="socialArea" class="button-grid"></div>
         <h2>進行状況</h2>
         <div id="progressArea" class="progress-box"></div>
@@ -28,13 +28,11 @@ if (Game.guardSession()) {
     const solved = JSON.parse(localStorage.getItem("solvedPuzzles") || "{}");
     GAME_PUZZLES.filter((puzzle) => puzzle.section === "ソーシャルエンジニアリング")
         .forEach((puzzle) => {
-            const button = document.createElement("button");
-            button.type = "button";
-            button.textContent = `${puzzle.title}${solved[puzzle.id] ? "（正解済み）" : ""}`;
-            button.addEventListener("click", () => {
-                location.href = `challenge.html?id=${encodeURIComponent(puzzle.id)}`;
-            });
-            document.getElementById("socialArea").append(button);
+            const link = document.createElement("a");
+            link.className = "button-link";
+            link.href = `challenge.html?id=${encodeURIComponent(puzzle.id)}`;
+            link.textContent = `${puzzle.title}${solved[puzzle.id] ? "（正解済み）" : ""}`;
+            document.getElementById("socialArea").append(link);
         });
 }
 </script>

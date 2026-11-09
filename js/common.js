@@ -12,6 +12,7 @@ window.Game = (() => {
         localStorage.setItem("studentNumber", studentNumber);
         localStorage.setItem("startTime", String(Date.now()));
         localStorage.setItem("solvedPuzzles", "{}");
+        localStorage.setItem("solvedPuzzleTimes", "{}");
         localStorage.removeItem("gameResult");
         localStorage.removeItem("scoreSent");
         location.href = "start.html";
@@ -30,6 +31,10 @@ window.Game = (() => {
 
     function solvedMap() {
         return readJson("solvedPuzzles", {});
+    }
+
+    function solvedTimesMap() {
+        return readJson("solvedPuzzleTimes", {});
     }
 
     function solvedCount() {
@@ -59,6 +64,7 @@ window.Game = (() => {
             className: localStorage.getItem("className") || "",
             studentNumber: localStorage.getItem("studentNumber") || "",
             solvedCount: solvedCount(),
+            puzzleTimes: solvedTimesMap(),
             totalCount: countedPuzzles.length,
             status,
             elapsedSeconds: Math.min(
@@ -141,6 +147,27 @@ window.Game = (() => {
 
         title.textContent = puzzle.title;
         question.textContent = puzzle.question || "問題文は後日設定予定です。";
+        (puzzle.downloads || []).forEach((download) => {
+            const link = document.createElement("a");
+            link.className = "question-download";
+            link.href = download.href;
+            link.download = download.href.split("/").pop() || "download";
+            link.textContent = download.label;
+            question.append(link, document.createElement("br"));
+        });
+        if (puzzle.image) {
+            const downloadLink = document.createElement("a");
+            downloadLink.className = "question-download";
+            downloadLink.href = puzzle.image;
+            downloadLink.download = puzzle.image.split("/").pop() || "puzzle-image";
+            downloadLink.textContent = "問題画像をダウンロード";
+
+            const image = document.createElement("img");
+            image.className = "question-image";
+            image.src = puzzle.image;
+            image.alt = "問題の画像";
+            question.append(downloadLink, image);
+        }
         const solved = solvedMap();
         if (solved[puzzle.id]) {
             status.textContent = "この課題は正解済みです。";
@@ -158,15 +185,25 @@ window.Game = (() => {
             event.preventDefault();
             if (!guardSession()) return;
             const answer = answerInput.value.trim().normalize("NFKC");
-            const correct = puzzle.answers.some((candidate) =>
-                answer === String(candidate).trim().normalize("NFKC")
-            );
+            const correct = puzzle.answerTolerance === undefined
+                ? puzzle.answers.some((candidate) =>
+                    answer === String(candidate).trim().normalize("NFKC")
+                )
+                : /^\d+(?:\.\d+)?$/.test(answer) &&
+                    puzzle.answers.some((candidate) => {
+                        const expected = Number(candidate);
+                        return Number.isFinite(expected) &&
+                            Math.abs(Number(answer) - expected) <= puzzle.answerTolerance;
+                    });
             if (!correct) {
                 status.textContent = "不正解です。もう一度考えてみてください。";
                 return;
             }
             solved[puzzle.id] = true;
             localStorage.setItem("solvedPuzzles", JSON.stringify(solved));
+            const puzzleTimes = solvedTimesMap();
+            puzzleTimes[puzzle.id] = Math.floor((Date.now() - startedAt()) / 1000);
+            localStorage.setItem("solvedPuzzleTimes", JSON.stringify(puzzleTimes));
             if (solvedCount() === countedPuzzles.length) {
                 finish("complete");
                 return;

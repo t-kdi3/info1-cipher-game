@@ -50,6 +50,9 @@ if (!result) {
     if (localStorage.getItem("scoreSent") === "true") {
         submitButton.disabled = true;
         submitStatus.textContent = "この結果は送信済みです。";
+    } else {
+        submitStatus.textContent = "結果を自動送信しています...";
+        Game.submitResult(result, submitStatus, submitButton);
     }
 }
 </script>
