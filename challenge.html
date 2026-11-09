@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>暗号解読 | 情報Ⅰ 暗号解読チャレンジ</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main class="container">
+    <section class="page-card">
+        <h1 id="challengeTitle">暗号解読課題</h1>
+        <div id="timer" class="timer"></div>
+        <div id="question" class="question-box"></div>
+        <form id="answerForm">
+            <label for="answer">答え</label>
+            <input id="answer" autocomplete="off" placeholder="答えを入力">
+            <button id="answerButton" type="submit">回答する</button>
+        </form>
+        <p id="answerStatus" class="notice" role="status" aria-live="polite"></p>
+        <h2>進行状況</h2>
+        <div id="progressArea" class="progress-box"></div>
+        <button class="back-btn" type="button" onclick="location.href='start.html'">課題一覧へ戻る</button>
+    </section>
+</main>
+<script src="js/config.js"></script>
+<script src="js/puzzles.js"></script>
+<script src="js/common.js"></script>
+<script>
+if (Game.guardSession()) {
+    Game.startTimer(document.getElementById("timer"));
+    Game.renderProgress(document.getElementById("progressArea"));
+    Game.renderChallenge();
+}
+</script>
+</body>
+</html>

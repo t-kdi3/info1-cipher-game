@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>課題一覧 | 情報Ⅰ 暗号解読チャレンジ</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main class="container">
+    <section class="page-card">
+        <h1>課題一覧</h1>
+        <p id="playerInfo" class="player-name"></p>
+        <div id="timer" class="timer"></div>
+        <p>例題は練習用で、クリア条件とクラス平均に含みません。</p>
+        <h2>例題</h2>
+        <div id="exampleArea" class="button-grid"></div>
+        <h2>暗号解読課題（8問）</h2>
+        <div id="challengeArea" class="button-grid"></div>
+        <h2>7：ソーシャルエンジニアリング</h2>
+        <p>7-1・7-2はそれぞれ独立した課題です。</p>
+        <button type="button" onclick="location.href='social.html'">7の課題を選ぶ</button>
+        <hr>
+        <h2>進行状況</h2>
+        <div id="progressArea" class="progress-box"></div>
+    </section>
+</main>
+<script src="js/config.js"></script>
+<script src="js/puzzles.js"></script>
+<script src="js/common.js"></script>
+<script>
+if (Game.guardSession()) {
+    document.getElementById("playerInfo").textContent =
+        `クラス：${localStorage.getItem("className") || ""}　出席番号：${localStorage.getItem("studentNumber") || ""}`;
+    Game.startTimer(document.getElementById("timer"));
+    Game.renderProgress(document.getElementById("progressArea"));
+
+    const solved = JSON.parse(localStorage.getItem("solvedPuzzles") || "{}");
+    const addPuzzleButton = (puzzle, area, markSolved) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = `${puzzle.title}${markSolved && solved[puzzle.id] ? "（正解済み）" : ""}`;
+        button.addEventListener("click", () => {
+            location.href = `challenge.html?id=${encodeURIComponent(puzzle.id)}`;
+        });
+        area.append(button);
+    };
+    addPuzzleButton(
+        GAME_PUZZLES.find((puzzle) => puzzle.id === "example"),
+        document.getElementById("exampleArea"),
+        false
+    );
+    GAME_PUZZLES.filter((puzzle) => puzzle.counted && puzzle.section === "課題")
+        .forEach((puzzle) => addPuzzleButton(
+            puzzle,
+            document.getElementById("challengeArea"),
+            true
+        ));
+}
+</script>
+</body>
+</html>

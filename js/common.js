@@ -1,0 +1,227 @@
+window.Game = (() => {
+    const DURATION_SECONDS = 40 * 60;
+    const countedPuzzles = window.GAME_PUZZLES.filter((puzzle) => puzzle.counted);
+
+    function readJson(key, fallback) {
+        const value = localStorage.getItem(key);
+        return value ? JSON.parse(value) : fallback;
+    }
+
+    function start(className, studentNumber) {
+        localStorage.setItem("className", className);
+        localStorage.setItem("studentNumber", studentNumber);
+        localStorage.setItem("startTime", String(Date.now()));
+        localStorage.setItem("solvedPuzzles", "{}");
+        localStorage.removeItem("gameResult");
+        localStorage.removeItem("scoreSent");
+        location.href = "start.html";
+    }
+
+    function startedAt() {
+        return Number(localStorage.getItem("startTime")) || 0;
+    }
+
+    function remainingSeconds() {
+        const start = startedAt();
+        return start
+            ? Math.max(0, DURATION_SECONDS - Math.floor((Date.now() - start) / 1000))
+            : 0;
+    }
+
+    function solvedMap() {
+        return readJson("solvedPuzzles", {});
+    }
+
+    function solvedCount() {
+        const solved = solvedMap();
+        return countedPuzzles.filter((puzzle) => solved[puzzle.id]).length;
+    }
+
+    function formatSeconds(seconds) {
+        const safeSeconds = Math.max(0, Number(seconds) || 0);
+        const minutes = Math.floor(safeSeconds / 60);
+        const remainder = safeSeconds % 60;
+        return `${minutes}分${String(remainder).padStart(2, "0")}秒`;
+    }
+
+    function finish(status) {
+        if (localStorage.getItem("gameResult")) {
+            location.href = "result.html";
+            return;
+        }
+        const start = startedAt();
+        if (!start) {
+            location.href = "index.html";
+            return;
+        }
+        const now = Date.now();
+        const result = {
+            className: localStorage.getItem("className") || "",
+            studentNumber: localStorage.getItem("studentNumber") || "",
+            solvedCount: solvedCount(),
+            totalCount: countedPuzzles.length,
+            status,
+            elapsedSeconds: Math.min(
+                DURATION_SECONDS,
+                Math.max(0, Math.floor((now - start) / 1000))
+            ),
+            startedAt: new Date(start).toISOString(),
+            finishedAt: new Date(now).toISOString()
+        };
+        localStorage.setItem("gameResult", JSON.stringify(result));
+        location.href = "result.html";
+    }
+
+    function guardSession() {
+        if (!startedAt()) {
+            location.href = "index.html";
+            return false;
+        }
+        if (localStorage.getItem("gameResult")) {
+            location.href = "result.html";
+            return false;
+        }
+        if (remainingSeconds() <= 0) {
+            finish("timeout");
+            return false;
+        }
+        return true;
+    }
+
+    function startTimer(element) {
+        let timerId;
+        const update = () => {
+            const remaining = remainingSeconds();
+            element.textContent = `残り時間 ${formatSeconds(remaining)}`;
+            if (remaining === 0) {
+                clearInterval(timerId);
+                finish("timeout");
+            }
+        };
+        update();
+        timerId = setInterval(update, 1000);
+    }
+
+    function renderProgress(element) {
+        const solved = solvedMap();
+        element.replaceChildren();
+        countedPuzzles.forEach((puzzle) => {
+            const row = document.createElement("div");
+            row.className = "progress-row";
+            const title = document.createElement("span");
+            title.textContent = puzzle.title;
+            const state = document.createElement("span");
+            state.textContent = solved[puzzle.id] ? "正解" : "未クリア";
+            if (solved[puzzle.id]) state.className = "solved";
+            row.append(title, state);
+            element.append(row);
+        });
+        const total = document.createElement("p");
+        total.className = "progress-total";
+        total.textContent = `正答数 ${solvedCount()}/${countedPuzzles.length}`;
+        element.append(total);
+    }
+
+    function renderChallenge() {
+        const puzzleId = new URLSearchParams(location.search).get("id");
+        const puzzle = window.GAME_PUZZLES.find((item) => item.id === puzzleId);
+        const title = document.getElementById("challengeTitle");
+        const question = document.getElementById("question");
+        const status = document.getElementById("answerStatus");
+        const form = document.getElementById("answerForm");
+        const answerInput = document.getElementById("answer");
+        const submitButton = document.getElementById("answerButton");
+
+        if (!puzzle) {
+            title.textContent = "課題が見つかりません";
+            question.textContent = "課題一覧から選び直してください。";
+            form.hidden = true;
+            return;
+        }
+
+        title.textContent = puzzle.title;
+        question.textContent = puzzle.question || "問題文は後日設定予定です。";
+        const solved = solvedMap();
+        if (solved[puzzle.id]) {
+            status.textContent = "この課題は正解済みです。";
+            form.hidden = true;
+            return;
+        }
+        if (!puzzle.question || !puzzle.answers.length) {
+            status.textContent = "問題と正答は準備中です。設定後に挑戦できます。";
+            answerInput.disabled = true;
+            submitButton.disabled = true;
+            return;
+        }
+
+        form.addEventListener("submit", (event) => {
+            event.preventDefault();
+            if (!guardSession()) return;
+            const answer = answerInput.value.trim().normalize("NFKC");
+            const correct = puzzle.answers.some((candidate) =>
+                answer === String(candidate).trim().normalize("NFKC")
+            );
+            if (!correct) {
+                status.textContent = "不正解です。もう一度考えてみてください。";
+                return;
+            }
+            solved[puzzle.id] = true;
+            localStorage.setItem("solvedPuzzles", JSON.stringify(solved));
+            if (solvedCount() === countedPuzzles.length) {
+                finish("complete");
+                return;
+            }
+            status.textContent = "正解です。課題一覧に戻って次の課題に挑戦してください。";
+            form.hidden = true;
+        });
+    }
+
+    async function submitResult(result, messageElement, button) {
+        if (!window.GAME_API_URL) {
+            messageElement.textContent =
+                "記録APIが未設定です。GASのURLを設定してから送信してください。";
+            return;
+        }
+        if (localStorage.getItem("scoreSent") === "true") {
+            messageElement.textContent = "この結果は送信済みです。";
+            return;
+        }
+        button.disabled = true;
+        messageElement.textContent = "記録を送信しています...";
+        try {
+            const response = await fetch(window.GAME_API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify({ type: "result", ...result })
+            });
+            if (!response.ok) {
+                throw new Error(`記録APIがHTTP ${response.status}を返しました。`);
+            }
+            const data = await response.json();
+            if (data.ok !== true) {
+                throw new Error(data.message || "保存完了を確認できませんでした。");
+            }
+            localStorage.setItem("scoreSent", "true");
+            messageElement.textContent = "結果を共有ランキングへ送信しました。";
+        } catch (error) {
+            console.error("結果の送信に失敗しました。", error);
+            messageElement.textContent = `送信に失敗しました。${error.message}`;
+            button.disabled = false;
+        }
+    }
+
+    return {
+        DURATION_SECONDS,
+        TOTAL_QUESTIONS: countedPuzzles.length,
+        finish,
+        formatSeconds,
+        guardSession,
+        renderChallenge,
+        renderProgress,
+        remainingSeconds,
+        solvedCount,
+        start,
+        startTimer,
+        submitResult
+    };
+})();

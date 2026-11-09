@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ランキング・クラス平均 | 情報Ⅰ 暗号解読チャレンジ</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main class="container">
+    <section class="page-card">
+        <h1>ランキング・クラス平均</h1>
+        <p id="loadStatus" class="notice" role="status" aria-live="polite"></p>
+        <h2>全問クリアランキング</h2>
+        <div class="table-scroll">
+            <table id="rankingTable">
+                <thead><tr><th>順位</th><th>クラス</th><th>出席番号</th><th>クリアタイム</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <h2>クラス別 平均正答数</h2>
+        <div class="table-scroll">
+            <table id="averageTable">
+                <thead><tr><th>クラス</th><th>平均正答数</th><th>参加人数</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <button type="button" onclick="location.href='index.html'">トップへ戻る</button>
+    </section>
+</main>
+<script src="js/config.js"></script>
+<script src="js/puzzles.js"></script>
+<script src="js/common.js"></script>
+<script>
+const loadStatus = document.getElementById("loadStatus");
+const rankingBody = document.querySelector("#rankingTable tbody");
+const averageBody = document.querySelector("#averageTable tbody");
+
+function addCell(row, value) {
+    const cell = document.createElement("td");
+    cell.textContent = value;
+    row.append(cell);
+}
+
+function displayFailure(message) {
+    loadStatus.textContent = message;
+    [[rankingBody, 4], [averageBody, 3]].forEach(([body, columns]) => {
+        body.replaceChildren();
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = columns;
+        cell.textContent = message;
+        row.append(cell);
+        body.append(row);
+    });
+}
+
+async function loadRanking() {
+    if (!window.GAME_API_URL) {
+        displayFailure("ランキングAPIが未設定です。GASのURLを設定してください。");
+        return;
+    }
+    loadStatus.textContent = "記録を読み込んでいます...";
+    try {
+        const response = await fetch(window.GAME_API_URL);
+        if (!response.ok) throw new Error(`ランキングAPIがHTTP ${response.status}を返しました。`);
+        const data = await response.json();
+        if (!Array.isArray(data.rankings) || !Array.isArray(data.classAverages)) {
+            throw new Error("ランキングAPIの応答形式が正しくありません。");
+        }
+        rankingBody.replaceChildren();
+        data.rankings.forEach((record, index) => {
+            const row = document.createElement("tr");
+            addCell(row, String(index + 1));
+            addCell(row, String(record.className));
+            addCell(row, String(record.studentNumber));
+            addCell(row, Game.formatSeconds(Number(record.elapsedSeconds)));
+            rankingBody.append(row);
+        });
+        if (!data.rankings.length) {
+            const row = document.createElement("tr");
+            const cell = document.createElement("td");
+            cell.colSpan = 4;
+            cell.textContent = "全問クリアの記録はまだありません。";
+            row.append(cell);
+            rankingBody.append(row);
+        }
+
+        averageBody.replaceChildren();
+        data.classAverages.forEach((record) => {
+            const row = document.createElement("tr");
+            addCell(row, String(record.className));
+            addCell(row, `${Number(record.averageSolved).toFixed(2)} / ${Game.TOTAL_QUESTIONS}`);
+            addCell(row, String(record.participantCount));
+            averageBody.append(row);
+        });
+        if (!data.classAverages.length) {
+            const row = document.createElement("tr");
+            const cell = document.createElement("td");
+            cell.colSpan = 3;
+            cell.textContent = "クラス平均の記録はまだありません。";
+            row.append(cell);
+            averageBody.append(row);
+        }
+        loadStatus.textContent = "最新の記録を表示しています。";
+    } catch (error) {
+        console.error("ランキングの読み込みに失敗しました。", error);
+        displayFailure(`ランキングを取得できませんでした。${error.message}`);
+    }
+}
+
+loadRanking();
+setInterval(loadRanking, 30000);
+</script>
+</body>
+</html>
