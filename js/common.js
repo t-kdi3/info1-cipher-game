@@ -37,6 +37,24 @@ window.Game = (() => {
         return readJson("solvedPuzzleTimes", {});
     }
 
+    function normalizeAnswer(value) {
+        return String(value)
+            .trim()
+            .normalize("NFKC")
+            .toLowerCase()
+            .replace(/[\u30a1-\u30f6]/g, (character) =>
+                String.fromCharCode(character.charCodeAt(0) - 0x60)
+            );
+    }
+
+    function parseNumericAnswer(value) {
+        const normalized = normalizeAnswer(value).replace(/\s/g, "");
+        const match = normalized.match(
+            /^((?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d+)?)(?:km|きろめーとる|きろ)?$/
+        );
+        return match ? Number(match[1].replace(/,/g, "")) : null;
+    }
+
     function solvedCount() {
         const solved = solvedMap();
         return countedPuzzles.filter((puzzle) => solved[puzzle.id]).length;
@@ -184,16 +202,17 @@ window.Game = (() => {
         form.addEventListener("submit", (event) => {
             event.preventDefault();
             if (!guardSession()) return;
-            const answer = answerInput.value.trim().normalize("NFKC");
+            const answer = normalizeAnswer(answerInput.value);
+            const numericAnswer = parseNumericAnswer(answer);
             const correct = puzzle.answerTolerance === undefined
                 ? puzzle.answers.some((candidate) =>
-                    answer === String(candidate).trim().normalize("NFKC")
+                    answer === normalizeAnswer(candidate)
                 )
-                : /^\d+(?:\.\d+)?$/.test(answer) &&
+                : numericAnswer !== null &&
                     puzzle.answers.some((candidate) => {
                         const expected = Number(candidate);
                         return Number.isFinite(expected) &&
-                            Math.abs(Number(answer) - expected) <= puzzle.answerTolerance;
+                            Math.abs(numericAnswer - expected) <= puzzle.answerTolerance;
                     });
             if (!correct) {
                 status.textContent = "不正解です。もう一度考えてみてください。";

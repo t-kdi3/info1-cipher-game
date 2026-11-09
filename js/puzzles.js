@@ -5,7 +5,7 @@ window.GAME_PUZZLES = [
         section: "例題",
         counted: false,
         question: "たるーころをたきこめる\n\n左の絵：こけし\n右の絵：たぬき",
-        answers: ["るーるをきめる"]
+        answers: ["るーるをきめる", "ルールを決める"]
     },
     {
         id: "acrostic",
@@ -13,7 +13,7 @@ window.GAME_PUZZLES = [
         section: "課題",
         counted: true,
         question: "何を言いたい？\n==========\nあくびがでるわ\nいやけがさすわ\nしにたいくらい\nてんでたいくつ\nまぬけなあなた\nすべってころべ\n==========",
-        answers: ["あいしてます"]
+        answers: ["あいしてます", "愛してます"]
     },
     {
         id: "caesar",
@@ -29,7 +29,7 @@ window.GAME_PUZZLES = [
         section: "課題",
         counted: true,
         question: "これに登場する2種類の動物は？\n==========\nオスゲヌクュ\n\nユセユセクュレクュスヷレ\nタクエヒオヅハギモガミネ\nウリャヒヒヱエユヒビノエ\nネオセナチヷノハヒヱエヒク\n\nノヷヌギデセョワオスゲスヷ\nチヷノロギモガヌクサコロポ\nヤシオヒシヨモヒベユヌモニ\nネヅログスケハクサトコク\n\nネヷノハクュグエチエニユ\nネオタピヷモニククワツヱオ\nシシロニヅルデヌブヌパヤヮ\nゴㅠゴㅠゴㅠゴㅠゴㅠゴㅠゴㅠ\n\nシヰビパソゲッセコゼデッ\nヘルヷヘルヷヘルヷヘルヷヘル\nウヷモヮギチエオスゲスヷ\nスデケヒゼモヷビネオセッヒ\n==========",
-        answers: ["うさぎとかめ"]
+        answers: ["うさぎとかめ", "兎と亀", "うさぎと亀"]
     },
     {
         id: "exif",
@@ -38,7 +38,7 @@ window.GAME_PUZZLES = [
         counted: true,
         question: "写真を端末にダウンロードし、EXIF情報のコメントを確認してください。",
         image: "assets/exif-photo.jpg",
-        answers: ["写真"]
+        answers: ["写真", "しゃしん"]
     },
     {
         id: "encoding",
