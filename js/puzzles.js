@@ -4,8 +4,11 @@ window.GAME_PUZZLES = [
         title: "0：例題",
         section: "例題",
         counted: false,
-        question: "たるーころをたきこめる\n\n左の絵：こけし\n右の絵：たぬき",
-        answers: ["るーるをきめる", "ルールを決める"]
+        question: "",
+        image: "assets/example-puzzle.png",
+        imageAlt: "こけしとたぬきの絵を使った例題",
+        answerFormat: "hiragana",
+        answers: ["るーるをきめる"]
     },
     {
         id: "acrostic",
@@ -13,7 +16,8 @@ window.GAME_PUZZLES = [
         section: "課題",
         counted: true,
         question: "何を言いたい？\n==========\nあくびがでるわ\nいやけがさすわ\nしにたいくらい\nてんでたいくつ\nまぬけなあなた\nすべってころべ\n==========",
-        answers: ["あいしてます", "愛してます"]
+        answerFormat: "hiragana",
+        answers: ["あいしてます"]
     },
     {
         id: "caesar",
@@ -21,7 +25,8 @@ window.GAME_PUZZLES = [
         section: "課題",
         counted: true,
         question: "これに登場する地名が答え\n==========\nOljb txp klq yrfiq fk x axv.\n\nXii olxap ibxa ql Oljb.\n==========",
-        answers: ["Rome", "ローマ"]
+        answerFormat: "katakana",
+        answers: ["ローマ"]
     },
     {
         id: "unicode",
@@ -29,34 +34,40 @@ window.GAME_PUZZLES = [
         section: "課題",
         counted: true,
         question: "これに登場する2種類の動物は？\n==========\nオスゲヌクュ\n\nユセユセクュレクュスヷレ\nタクエヒオヅハギモガミネ\nウリャヒヒヱエユヒビノエ\nネオセナチヷノハヒヱエヒク\n\nノヷヌギデセョワオスゲスヷ\nチヷノロギモガヌクサコロポ\nヤシオヒシヨモヒベユヌモニ\nネヅログスケハクサトコク\n\nネヷノハクュグエチエニユ\nネオタピヷモニククワツヱオ\nシシロニヅルデヌブヌパヤヮ\nゴㅠゴㅠゴㅠゴㅠゴㅠゴㅠゴㅠ\n\nシヰビパソゲッセコゼデッ\nヘルヷヘルヷヘルヷヘルヷヘル\nウヷモヮギチエオスゲスヷ\nスデケヒゼモヷビネオセッヒ\n==========",
-        answers: ["うさぎとかめ", "兎と亀", "うさぎと亀"]
+        answerFormat: "hiragana",
+        answerFields: ["動物名 1", "動物名 2"],
+        answers: ["うさぎ", "かめ"]
     },
     {
         id: "exif",
         title: "4：EXIF",
         section: "課題",
         counted: true,
-        question: "写真を端末にダウンロードし、EXIF情報のコメントを確認してください。",
+        question: "写真を端末にダウンロードして確認してください。",
+        answerFormat: "kanji",
         image: "assets/exif-photo.jpg",
-        answers: ["写真", "しゃしん"]
+        answers: ["写真"]
     },
     {
         id: "encoding",
         title: "5：エンコード",
         section: "課題",
         counted: true,
-        question: "これが表す果物は？\n==========\n鮟�濶ｲ縺�譛医ｒ邨槭ｋ縺ｨ縲�驟ｸ縺｣縺ｱ縺�縺励★縺上′逧ｿ縺ｫ雕翫ｋ縲るｦ吶ｊ縺ｲ縺ｨ縺輔§縲∝､上�ｮ鬚ｨ縲�\n==========",
-        answers: ["レモン", "Lemon"]
+        question: "この作品のタイトルに出てくる動物は？",
+        answerFormat: "katakana",
+        encodedText: "assets/encoding-error.html",
+        answers: ["カニ"]
     },
     {
         id: "cryptography",
         title: "6：クリプトグラフィ",
         section: "課題",
         counted: true,
-        question: "画像ファイルをダウンロードし、バイナリエディタでファイルの最後を確認してください。",
+        question: "最後を調べてね。",
+        answerFormat: "kanji-katakana",
         image: "assets/hidden-message.jpg",
         downloads: [
-            { href: "tools/binary-viewer.html", label: "バイナリエディタ（閲覧用）をダウンロード" }
+            { href: "tools/binary-viewer.html", label: "ファイルを調べるツール" }
         ],
         answers: ["情報ハイディング"]
     },
@@ -66,6 +77,7 @@ window.GAME_PUZZLES = [
         section: "ソーシャルエンジニアリング",
         counted: true,
         question: "添付画像を参考にして、答えを入力してください。",
+        answerFormat: "halfwidth-number",
         image: "assets/spartan-cylinder.jpg",
         answers: ["583"]
     },
@@ -74,7 +86,8 @@ window.GAME_PUZZLES = [
         title: "7-2：ヴィジュネル方陣",
         section: "ソーシャルエンジニアリング",
         counted: true,
-        question: "次の暗号文をヴィジュネル方陣で解読し、文が表す川の長さの差をkmで答えてください。距離には諸説があるため、おおよその値も正解とします。\n\nUMZHMZEPX UEXCQ ZHAR VW CPLFPVXJLZ PIVHM BCEP US ECOPZE EQ APOE",
+        question: "次の暗号文をヴィジュネル方陣で解読してください。\n誤差を認めるので、このくらいという数値を入力してください。\n\nUMZHMZEPX UEXCQ ZHAR VW CPLFPVXJLZ PIVHM BCEP US ECOPZE EQ APOE",
+        answerFormat: "halfwidth-number",
         image: "assets/vigenere-square.png",
         answers: ["6283"],
         answerTolerance: 100

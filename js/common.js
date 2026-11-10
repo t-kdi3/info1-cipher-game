@@ -1,6 +1,28 @@
 window.Game = (() => {
     const DURATION_SECONDS = 40 * 60;
     const countedPuzzles = window.GAME_PUZZLES.filter((puzzle) => puzzle.counted);
+    const ANSWER_FORMATS = {
+        hiragana: {
+            instruction: "ひらがなで入力してください。",
+            pattern: /^[\u3041-\u3096ー]+$/
+        },
+        katakana: {
+            instruction: "カタカナで入力してください。",
+            pattern: /^[\u30a1-\u30faー]+$/
+        },
+        kanji: {
+            instruction: "漢字で入力してください。",
+            pattern: /^\p{Script=Han}+$/u
+        },
+        "kanji-katakana": {
+            instruction: "漢字と全角カタカナの組み合わせで入力してください。",
+            pattern: /^(?=.*\p{Script=Han})(?=.*[\u30a1-\u30fa])[\p{Script=Han}\u30a1-\u30faー]+$/u
+        },
+        "halfwidth-number": {
+            instruction: "半角数字で入力してください。",
+            pattern: /^[0-9]+(?:\.[0-9]+)?$/
+        }
+    };
 
     function readJson(key, fallback) {
         const value = localStorage.getItem(key);
@@ -146,6 +168,19 @@ window.Game = (() => {
         element.append(total);
     }
 
+    function renderQuestionText(element, text) {
+        element.replaceChildren();
+        const sections = text.split(/^={3,}$/m);
+        sections.forEach((section, index) => {
+            if (section) element.append(document.createTextNode(section));
+            if (index < sections.length - 1) {
+                const separator = document.createElement("hr");
+                separator.className = "question-separator";
+                element.append(separator);
+            }
+        });
+    }
+
     function renderChallenge() {
         const puzzleId = new URLSearchParams(location.search).get("id");
         const puzzle = window.GAME_PUZZLES.find((item) => item.id === puzzleId);
@@ -153,7 +188,7 @@ window.Game = (() => {
         const question = document.getElementById("question");
         const status = document.getElementById("answerStatus");
         const form = document.getElementById("answerForm");
-        const answerInput = document.getElementById("answer");
+        const answerFieldContainer = document.getElementById("answerFields");
         const submitButton = document.getElementById("answerButton");
 
         if (!puzzle) {
@@ -164,7 +199,30 @@ window.Game = (() => {
         }
 
         title.textContent = puzzle.title;
-        question.textContent = puzzle.question || "問題文は後日設定予定です。";
+        renderQuestionText(question, puzzle.question || "");
+        const answerFields = Array.isArray(puzzle.answerFields)
+            ? puzzle.answerFields
+            : ["答え"];
+        answerFieldContainer.replaceChildren();
+        const answerFormat = ANSWER_FORMATS[puzzle.answerFormat];
+        if (answerFormat) {
+            const instruction = document.createElement("p");
+            instruction.className = "notice answer-rule";
+            instruction.textContent = answerFormat.instruction;
+            answerFieldContainer.append(instruction);
+        }
+        answerFields.forEach((field, index) => {
+            const inputId = `answer-${index + 1}`;
+            const label = document.createElement("label");
+            label.htmlFor = inputId;
+            label.textContent = field;
+            const input = document.createElement("input");
+            input.id = inputId;
+            input.name = "answer";
+            input.autocomplete = "off";
+            input.placeholder = `${field}を入力`;
+            answerFieldContainer.append(label, input);
+        });
         (puzzle.downloads || []).forEach((download) => {
             const link = document.createElement("a");
             link.className = "question-download";
@@ -183,8 +241,21 @@ window.Game = (() => {
             const image = document.createElement("img");
             image.className = "question-image";
             image.src = puzzle.image;
-            image.alt = "問題の画像";
+            image.alt = puzzle.imageAlt || "問題の画像";
             question.append(downloadLink, image);
+        }
+        if (puzzle.encodedText) {
+            const textFrame = document.createElement("iframe");
+            textFrame.className = "question-text-frame";
+            textFrame.src = puzzle.encodedText;
+            textFrame.title = "文字化けした問題文";
+            const openLink = document.createElement("a");
+            openLink.className = "question-download";
+            openLink.href = puzzle.encodedText;
+            openLink.target = "_blank";
+            openLink.rel = "noopener";
+            openLink.textContent = "問題文を別タブで開く";
+            question.append(textFrame, openLink);
         }
         const solved = solvedMap();
         if (solved[puzzle.id]) {
@@ -192,9 +263,19 @@ window.Game = (() => {
             form.hidden = true;
             return;
         }
-        if (!puzzle.question || !puzzle.answers.length) {
+        if (
+            (!puzzle.question && !puzzle.image) ||
+            answerFields.length === 0 ||
+            !Array.isArray(puzzle.answers) ||
+            !puzzle.answers.length ||
+            (puzzle.answerFields &&
+                (answerFields.length !== puzzle.answers.length ||
+                    answerFields.length < 2))
+        ) {
             status.textContent = "問題と正答は準備中です。設定後に挑戦できます。";
-            answerInput.disabled = true;
+            answerFieldContainer.querySelectorAll("input").forEach((input) => {
+                input.disabled = true;
+            });
             submitButton.disabled = true;
             return;
         }
@@ -202,18 +283,45 @@ window.Game = (() => {
         form.addEventListener("submit", (event) => {
             event.preventDefault();
             if (!guardSession()) return;
-            const answer = normalizeAnswer(answerInput.value);
-            const numericAnswer = parseNumericAnswer(answer);
-            const correct = puzzle.answerTolerance === undefined
-                ? puzzle.answers.some((candidate) =>
-                    answer === normalizeAnswer(candidate)
-                )
-                : numericAnswer !== null &&
+            const enteredAnswers = Array.from(
+                answerFieldContainer.querySelectorAll("input"),
+                (input) => puzzle.answerFormat
+                    ? input.value.trim()
+                    : normalizeAnswer(input.value)
+            );
+            const answer = enteredAnswers[0];
+            if (
+                answerFormat &&
+                enteredAnswers.some((value) => !answerFormat.pattern.test(value))
+            ) {
+                status.textContent = answerFormat.instruction;
+                return;
+            }
+            const numericAnswer = puzzle.answerFormat === "halfwidth-number"
+                ? Number(answer)
+                : parseNumericAnswer(answer);
+            const expectedAnswers = puzzle.answers
+                .map((value) => puzzle.answerFormat ? value : normalizeAnswer(value))
+                .sort();
+            const correct = puzzle.answerTolerance !== undefined
+                ? numericAnswer !== null &&
                     puzzle.answers.some((candidate) => {
                         const expected = Number(candidate);
                         return Number.isFinite(expected) &&
                             Math.abs(numericAnswer - expected) <= puzzle.answerTolerance;
-                    });
+                    })
+                : puzzle.answerFields
+                    ? enteredAnswers.length === puzzle.answers.length &&
+                        enteredAnswers.slice().sort().every(
+                            (value, index) => value === expectedAnswers[index]
+                        )
+                    : puzzle.answers.some((candidate) =>
+                        answer === (
+                            puzzle.answerFormat
+                                ? candidate
+                                : normalizeAnswer(candidate)
+                        )
+                    );
             if (!correct) {
                 status.textContent = "不正解です。もう一度考えてみてください。";
                 return;

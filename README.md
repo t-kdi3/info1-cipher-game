@@ -20,7 +20,7 @@ python3 -m http.server 8000
 
 ## 問題を設定する
 
-`js/puzzles.js` の各課題の `question` と `answers` を編集します。`answers` は正答文字列の配列です。回答判定では前後の空白を除き、Unicode NFKC正規化、英字の小文字化、ひらがな・カタカナの統一を行います。漢字など自動変換できない別表記は `answers` に追加します。誤差を許容する数値問題には `answerTolerance`（正解数値との差の許容幅）を指定できます。画像を出題する場合は `image` にプロジェクト内の画像パスを指定します。`downloads` には追加のダウンロードリンクを指定できます。
+`js/puzzles.js` の各課題の `question` と `answers` を編集します。`answers` は正答文字列の配列です。`answerFormat` を指定すると、入力欄に表記ルールを表示し、その形式以外の入力を受け付けません（例：`hiragana`、`katakana`、`kanji`、`kanji-katakana`、`halfwidth-number`）。指定がない場合は前後の空白を除き、Unicode NFKC正規化、英字の小文字化、ひらがな・カタカナの統一を行います。複数の回答欄を使う場合は、`answerFields` に欄のラベルを指定し、`answers` に各欄の正答を指定します（順不同で判定）。誤差を許容する数値問題には `answerTolerance`（正解数値との差の許容幅）を指定できます。画像を出題する場合は `image` にプロジェクト内の画像パスを指定します。`question` を空にして画像だけで出題することもできます。`encodedText` には文字コードの異なるHTML問題文のパスを指定できます。`downloads` には追加のダウンロードリンクを指定できます。
 
 ```js
 {
@@ -33,7 +33,7 @@ python3 -m http.server 8000
 }
 ```
 
-`question` または `answers` が未設定の課題は「準備中」と表示され、回答欄は使えません。例題は `counted: false` のままにしてください。
+`question` と `image` がどちらも未設定、または `answers` が未設定の課題は「準備中」と表示され、回答欄は使えません。複数の回答欄を使う場合は、`answerFields` と `answers` の要素数を一致させてください。例題は `counted: false` のままにしてください。
 
 ## Googleフォームの回答先とGAS APIを接続する
 
