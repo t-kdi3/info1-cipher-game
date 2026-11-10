@@ -61,6 +61,19 @@ function doPost(event) {
   }
 }
 
+function clearAllResults() {
+  const sheet = getResultsSheet();
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const lastRow = sheet.getLastRow();
+    if (lastRow <= 1) return;
+    sheet.getRange(2, 1, lastRow - 1, RESULT_HEADERS.length).clearContent();
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 function doGet() {
   try {
     const rows = getResultsSheet().getDataRange().getValues().slice(1);
