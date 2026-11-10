@@ -21,6 +21,85 @@ body {
     max-width: 1200px;
 }
 
+.ranking-card {
+    padding: 14px 20px;
+}
+
+.ranking-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.ranking-header h1 {
+    flex: 1;
+    margin-bottom: 0;
+    padding: 8px 12px;
+    font-size: 1.35rem;
+}
+
+.ranking-home-link {
+    flex: 0 0 auto;
+    color: #23395d;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.ranking-home-link:hover {
+    text-decoration: underline;
+}
+
+.ranking-card > .notice {
+    margin: 4px 0;
+    text-align: center;
+    font-size: .85rem;
+}
+
+.ranking-links {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin: 8px 0 12px;
+}
+
+.ranking-links .button-link {
+    width: auto;
+    min-width: 150px;
+    margin: 0;
+    padding: 6px 12px;
+    font-size: .95rem;
+}
+
+.ranking-dashboard {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+}
+
+.ranking-column {
+    display: grid;
+    gap: 12px;
+}
+
+.ranking-section h2 {
+    margin: 0;
+    padding: 6px 10px;
+    font-size: 1.05rem;
+}
+
+.ranking-section table {
+    margin: 6px 0 0;
+    font-size: .84rem;
+    line-height: 1.2;
+}
+
+.ranking-section th,
+.ranking-section td {
+    padding: 2px 5px;
+}
+
 .page-card {
     padding: 24px;
     border-radius: 12px;
@@ -299,5 +378,78 @@ tr:nth-child(even) {
 
     .page-card {
         padding: 16px;
+    }
+
+    .ranking-card {
+        padding: 12px;
+    }
+
+    .ranking-header {
+        align-items: flex-start;
+    }
+
+    .ranking-header h1 {
+        font-size: .95rem;
+        padding: 7px;
+    }
+
+    .ranking-home-link {
+        font-size: .85rem;
+    }
+
+    .ranking-dashboard {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .ranking-section h2 {
+        padding: 8px;
+        font-size: 1rem;
+    }
+
+    .ranking-section table {
+        font-size: .85rem;
+    }
+
+    .ranking-section th,
+    .ranking-section td {
+        padding: 5px;
+    }
+}
+
+@media (min-width: 521px) and (max-width: 1100px) {
+    .ranking-dashboard {
+        grid-template-columns: 1fr;
+    }
+
+    .ranking-column {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: start;
+    }
+}
+
+@media (min-width: 521px) and (max-width: 800px) {
+    .ranking-column {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (min-width: 521px) and (max-height: 800px) {
+    body.ranking-page {
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
+
+    .ranking-card {
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+
+    .ranking-links {
+        margin: 6px 0 8px;
+    }
+
+    .ranking-column {
+        gap: 8px;
     }
 }

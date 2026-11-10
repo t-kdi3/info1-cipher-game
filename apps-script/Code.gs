@@ -233,6 +233,7 @@ function getClassAverages(results) {
 
   return Array.from(classes, ([className, values]) => ({
     className,
+    totalSolved: values.totalSolved,
     averageSolved: values.totalSolved / values.participantCount,
     participantCount: values.participantCount
   })).sort((a, b) => a.className.localeCompare(b.className));

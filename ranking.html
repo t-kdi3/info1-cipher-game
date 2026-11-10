@@ -3,40 +3,52 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ランキング・クラス平均 | 情報Ⅰ 暗号解読チャレンジ</title>
+<title>結果ランキング | 情報Ⅰ 暗号解読チャレンジ</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="ranking-page">
 <main class="container ranking-container">
-    <section class="page-card">
-        <h1>結果ランキング・クラス平均</h1>
+    <section class="page-card ranking-card">
+        <header class="ranking-header">
+            <h1>結果ランキング</h1>
+            <a class="ranking-home-link" href="index.html">トップへ戻る</a>
+        </header>
         <p id="loadStatus" class="notice" role="status" aria-live="polite"></p>
         <nav class="ranking-links" aria-label="ランキング表示">
             <a id="studentsOnlyLink" class="button-link" href="ranking.html">生徒のみ</a>
             <a id="includeTeachersLink" class="button-link" href="ranking.html?includeTeachers=1">教員を含む</a>
         </nav>
-        <h2>全問正解のタイムランキング（個人）</h2>
-        <div class="table-scroll">
-            <table id="rankingTable">
-                <thead><tr><th>順位</th><th>クラス・区分</th><th>出席番号・氏名</th><th>クリアタイム</th></tr></thead>
-                <tbody></tbody>
-            </table>
+        <div class="ranking-dashboard">
+            <div class="ranking-column">
+                <section class="ranking-section">
+                    <h2>全問正解タイム（上位5名）</h2>
+                    <div class="table-scroll">
+                        <table id="rankingTable">
+                            <thead><tr><th>順位</th><th>クラス</th><th>番号</th><th>タイム</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </section>
+                <section class="ranking-section">
+                    <h2>クラス別ポイントランキング</h2>
+                    <div class="table-scroll">
+                        <table id="classPointsTable">
+                            <thead><tr><th>順位</th><th>クラス</th><th>合計ポイント</th><th>人数</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+            <section class="ranking-section puzzle-ranking-section">
+                <h2>問題別最速タイム</h2>
+                <div class="table-scroll">
+                    <table id="puzzleRankingTable">
+                        <thead><tr><th>問題</th><th>クラス</th><th>番号</th><th>タイム</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
         </div>
-        <h2>問題別の最速解答タイム（個人）</h2>
-        <div class="table-scroll">
-            <table id="puzzleRankingTable">
-                <thead><tr><th>問題</th><th>クラス・区分</th><th>出席番号・氏名</th><th>解答タイム</th></tr></thead>
-                <tbody></tbody>
-            </table>
-        </div>
-        <h2>クラス・区分別の平均回答完了数</h2>
-        <div class="table-scroll">
-            <table id="averageTable">
-                <thead><tr><th>クラス・区分</th><th>平均回答完了数</th><th>参加人数</th></tr></thead>
-                <tbody></tbody>
-            </table>
-        </div>
-        <button type="button" onclick="location.href='index.html'">トップへ戻る</button>
     </section>
 </main>
 <script src="js/config.js"></script>
@@ -46,8 +58,9 @@
 const loadStatus = document.getElementById("loadStatus");
 const rankingBody = document.querySelector("#rankingTable tbody");
 const puzzleRankingBody = document.querySelector("#puzzleRankingTable tbody");
-const averageBody = document.querySelector("#averageTable tbody");
+const classPointsBody = document.querySelector("#classPointsTable tbody");
 const countedPuzzles = GAME_PUZZLES.filter((puzzle) => puzzle.counted);
+const MAX_RANKING_ROWS = 5;
 const includeTeachers =
     new URLSearchParams(location.search).get("includeTeachers") === "1";
 document.getElementById("studentsOnlyLink").setAttribute(
@@ -58,6 +71,16 @@ document.getElementById("includeTeachersLink").setAttribute(
     "aria-current",
     includeTeachers ? "page" : "false"
 );
+document.querySelector("#rankingTable thead th:nth-child(2)").textContent =
+    includeTeachers ? "区分" : "クラス";
+document.querySelector("#rankingTable thead th:nth-child(3)").textContent =
+    includeTeachers ? "出席番号・氏名" : "出席番号";
+document.querySelector("#puzzleRankingTable thead th:nth-child(2)").textContent =
+    includeTeachers ? "区分" : "クラス";
+document.querySelector("#puzzleRankingTable thead th:nth-child(3)").textContent =
+    includeTeachers ? "出席番号・氏名" : "出席番号";
+document.querySelector("#classPointsTable thead th:nth-child(2)").textContent =
+    includeTeachers ? "区分" : "クラス";
 
 function addCell(row, value) {
     const cell = document.createElement("td");
@@ -67,7 +90,7 @@ function addCell(row, value) {
 
 function displayFailure(message) {
     loadStatus.textContent = message;
-    [[rankingBody, 4], [puzzleRankingBody, 4], [averageBody, 3]].forEach(([body, columns]) => {
+    [[rankingBody, 4], [puzzleRankingBody, 4], [classPointsBody, 4]].forEach(([body, columns]) => {
         body.replaceChildren();
         const row = document.createElement("tr");
         const cell = document.createElement("td");
@@ -95,7 +118,7 @@ async function loadRanking() {
         const rankings = data.rankings.filter((record) =>
             includeTeachers || record.className !== "教員"
         );
-        rankings.forEach((record, index) => {
+        rankings.slice(0, MAX_RANKING_ROWS).forEach((record, index) => {
             const row = document.createElement("tr");
             addCell(row, String(index + 1));
             addCell(row, record.className === "教員" ? "教員" : String(record.className));
@@ -145,29 +168,42 @@ async function loadRanking() {
             });
         }
 
-        averageBody.replaceChildren();
-        data.classAverages
+        classPointsBody.replaceChildren();
+        const classPoints = data.classAverages
             .filter((record) => includeTeachers || record.className !== "教員")
-            .forEach((record) => {
-                const row = document.createElement("tr");
-                addCell(row, record.className === "教員" ? "教員" : String(record.className));
-                addCell(row, `${Number(record.averageSolved).toFixed(2)} / ${Game.TOTAL_QUESTIONS}`);
-                addCell(row, String(record.participantCount));
-                averageBody.append(row);
-            });
-        if (!data.classAverages.some((record) =>
-            includeTeachers || record.className !== "教員"
-        )) {
+            .map((record) => ({
+                ...record,
+                totalSolved: Number.isFinite(Number(record.totalSolved))
+                    ? Number(record.totalSolved)
+                    : Math.round(Number(record.averageSolved) * Number(record.participantCount))
+            }))
+            .sort((a, b) =>
+                b.totalSolved - a.totalSolved ||
+                String(a.className).localeCompare(String(b.className))
+            );
+        let previousPoints = null;
+        let currentRank = 0;
+        classPoints.forEach((record, index) => {
+            if (record.totalSolved !== previousPoints) currentRank = index + 1;
+            previousPoints = record.totalSolved;
+            const row = document.createElement("tr");
+            addCell(row, String(currentRank));
+            addCell(row, record.className === "教員" ? "教員" : String(record.className));
+            addCell(row, String(record.totalSolved));
+            addCell(row, String(record.participantCount));
+            classPointsBody.append(row);
+        });
+        if (!classPoints.length) {
             const row = document.createElement("tr");
             const cell = document.createElement("td");
-            cell.colSpan = 3;
-            cell.textContent = "クラス平均の記録はまだありません。";
+            cell.colSpan = 4;
+            cell.textContent = "クラス別ポイントの記録はまだありません。";
             row.append(cell);
-            averageBody.append(row);
+            classPointsBody.append(row);
         }
         loadStatus.textContent = Array.isArray(data.puzzleRankings)
             ? "最新の記録を表示しています。"
-            : "全問ランキングとクラス平均を表示しています。問題別ランキングには記録APIの更新が必要です。";
+            : "全問ランキングとクラス別ポイントを表示しています。問題別ランキングには記録APIの更新が必要です。";
     } catch (error) {
         console.error("ランキングの読み込みに失敗しました。", error);
         displayFailure(`ランキングを取得できませんでした。${error.message}`);
