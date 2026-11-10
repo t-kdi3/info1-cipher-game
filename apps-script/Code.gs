@@ -71,7 +71,10 @@ function doGet() {
     return jsonResponse({
       rankings: getCompleteRankings(results),
       classAverages: getClassAverages(results),
-      puzzleRankings: getPuzzleRankings(results)
+      puzzleRankings: getPuzzleRankings(
+        results.filter((result) => result.className !== "教員")
+      ),
+      puzzleRankingsWithTeachers: getPuzzleRankings(results)
     });
   } catch (error) {
     console.error(error);
@@ -107,10 +110,15 @@ function validateResult(body) {
   const elapsedSeconds = Number(body.elapsedSeconds);
   const status = String(body.status || "");
 
-  if (!/^1-[1-8]$/.test(className)) {
+  const isTeacher = className === "教員";
+  if (!isTeacher && !/^1-[1-8]$/.test(className)) {
     throw new Error("Invalid className.");
   }
-  if (!/^[1-9]\d*$/.test(studentNumber)) {
+  if (isTeacher && (!studentNumber.trim() || studentNumber.length > 40 ||
+      /[\u0000-\u001f\u007f]/.test(studentNumber))) {
+    throw new Error("Invalid teacher name.");
+  }
+  if (!isTeacher && !/^[1-9]\d*$/.test(studentNumber)) {
     throw new Error("Invalid studentNumber.");
   }
   if (!Number.isInteger(solvedCount) || solvedCount < 0 || solvedCount > TOTAL_QUESTIONS) {
@@ -148,7 +156,7 @@ function validateResult(body) {
 
   return {
     className,
-    studentNumber,
+    studentNumber: isTeacher ? studentNumber.trim() : studentNumber,
     solvedCount,
     totalCount,
     status,

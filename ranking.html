@@ -11,24 +11,28 @@
     <section class="page-card">
         <h1>結果ランキング・クラス平均</h1>
         <p id="loadStatus" class="notice" role="status" aria-live="polite"></p>
+        <nav class="ranking-links" aria-label="ランキング表示">
+            <a id="studentsOnlyLink" class="button-link" href="ranking.html">生徒のみ</a>
+            <a id="includeTeachersLink" class="button-link" href="ranking.html?includeTeachers=1">教員を含む</a>
+        </nav>
         <h2>全問正解のタイムランキング（個人）</h2>
         <div class="table-scroll">
             <table id="rankingTable">
-                <thead><tr><th>順位</th><th>クラス</th><th>出席番号</th><th>クリアタイム</th></tr></thead>
+                <thead><tr><th>順位</th><th>クラス・区分</th><th>出席番号・氏名</th><th>クリアタイム</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
         <h2>問題別の最速解答タイム（個人）</h2>
         <div class="table-scroll">
             <table id="puzzleRankingTable">
-                <thead><tr><th>問題</th><th>クラス</th><th>出席番号</th><th>解答タイム</th></tr></thead>
+                <thead><tr><th>問題</th><th>クラス・区分</th><th>出席番号・氏名</th><th>解答タイム</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
-        <h2>クラス別の平均回答完了数</h2>
+        <h2>クラス・区分別の平均回答完了数</h2>
         <div class="table-scroll">
             <table id="averageTable">
-                <thead><tr><th>クラス</th><th>平均回答完了数</th><th>参加人数</th></tr></thead>
+                <thead><tr><th>クラス・区分</th><th>平均回答完了数</th><th>参加人数</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
@@ -44,6 +48,16 @@ const rankingBody = document.querySelector("#rankingTable tbody");
 const puzzleRankingBody = document.querySelector("#puzzleRankingTable tbody");
 const averageBody = document.querySelector("#averageTable tbody");
 const countedPuzzles = GAME_PUZZLES.filter((puzzle) => puzzle.counted);
+const includeTeachers =
+    new URLSearchParams(location.search).get("includeTeachers") === "1";
+document.getElementById("studentsOnlyLink").setAttribute(
+    "aria-current",
+    includeTeachers ? "false" : "page"
+);
+document.getElementById("includeTeachersLink").setAttribute(
+    "aria-current",
+    includeTeachers ? "page" : "false"
+);
 
 function addCell(row, value) {
     const cell = document.createElement("td");
@@ -78,15 +92,18 @@ async function loadRanking() {
             throw new Error("ランキングAPIの応答形式が正しくありません。");
         }
         rankingBody.replaceChildren();
-        data.rankings.forEach((record, index) => {
+        const rankings = data.rankings.filter((record) =>
+            includeTeachers || record.className !== "教員"
+        );
+        rankings.forEach((record, index) => {
             const row = document.createElement("tr");
             addCell(row, String(index + 1));
-            addCell(row, String(record.className));
+            addCell(row, record.className === "教員" ? "教員" : String(record.className));
             addCell(row, String(record.studentNumber));
             addCell(row, Game.formatSeconds(Number(record.elapsedSeconds)));
             rankingBody.append(row);
         });
-        if (!data.rankings.length) {
+        if (!rankings.length) {
             const row = document.createElement("tr");
             const cell = document.createElement("td");
             cell.colSpan = 4;
@@ -96,7 +113,10 @@ async function loadRanking() {
         }
 
         puzzleRankingBody.replaceChildren();
-        if (!Array.isArray(data.puzzleRankings)) {
+        const puzzleRankings = includeTeachers
+            ? data.puzzleRankingsWithTeachers
+            : data.puzzleRankings;
+        if (!Array.isArray(puzzleRankings)) {
             const row = document.createElement("tr");
             const cell = document.createElement("td");
             cell.colSpan = 4;
@@ -105,7 +125,7 @@ async function loadRanking() {
             puzzleRankingBody.append(row);
         } else {
             const fastestByPuzzle = new Map(
-                data.puzzleRankings.map((record) => [record.puzzleId, record])
+                puzzleRankings.map((record) => [record.puzzleId, record])
             );
             countedPuzzles.forEach((puzzle) => {
                 const row = document.createElement("tr");
@@ -126,14 +146,18 @@ async function loadRanking() {
         }
 
         averageBody.replaceChildren();
-        data.classAverages.forEach((record) => {
-            const row = document.createElement("tr");
-            addCell(row, String(record.className));
-            addCell(row, `${Number(record.averageSolved).toFixed(2)} / ${Game.TOTAL_QUESTIONS}`);
-            addCell(row, String(record.participantCount));
-            averageBody.append(row);
-        });
-        if (!data.classAverages.length) {
+        data.classAverages
+            .filter((record) => includeTeachers || record.className !== "教員")
+            .forEach((record) => {
+                const row = document.createElement("tr");
+                addCell(row, record.className === "教員" ? "教員" : String(record.className));
+                addCell(row, `${Number(record.averageSolved).toFixed(2)} / ${Game.TOTAL_QUESTIONS}`);
+                addCell(row, String(record.participantCount));
+                averageBody.append(row);
+            });
+        if (!data.classAverages.some((record) =>
+            includeTeachers || record.className !== "教員"
+        )) {
             const row = document.createElement("tr");
             const cell = document.createElement("td");
             cell.colSpan = 3;

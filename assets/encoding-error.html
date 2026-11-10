@@ -2,13 +2,110 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>Problem text</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>å•é¡Œæ–‡ã®æ–‡å­—ã‚³ãƒ¼ãƒ‰</title>
 <style>
-body { margin: 16px; color: #333; font-family: sans-serif; line-height: 1.8; }
+    body {
+        margin: 16px;
+        color: #333;
+        font-family: sans-serif;
+        line-height: 1.8;
+    }
+
+    .encoding-options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 12px 0;
+    }
+
+    button {
+        padding: 8px 12px;
+        border: 1px solid #8793a1;
+        border-radius: 6px;
+        background: #fff;
+        color: #23395d;
+        font: inherit;
+        cursor: pointer;
+    }
+
+    button[aria-pressed="true"] {
+        background: #23395d;
+        color: #fff;
+    }
+
+    button:disabled {
+        cursor: wait;
+    }
+
+    pre {
+        min-height: 180px;
+        padding: 16px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        background: #fafafa;
+        font: inherit;
+        white-space: pre-wrap;
+    }
 </style>
 </head>
 <body>
-u‚¨‚¢’n–‚³s‚®‚ñ‚¾‚ÅIv
-<p>“ñl‚ÍƒfƒbƒL‚Ìè‚·‚è‚ÉŠñ‚è‚©‚©‚Á‚ÄAå—‹‚ª”w‚Ì‚Ñ‚ğ‚µ‚½‚æ‚¤‚É‰„‚Ñ‚ÄAŠC‚ğ•ø‚¦‚ñ‚Å‚¢‚é”ŸŠÙ‚ÌŠX‚ğŒ©‚Ä‚¢‚½B\\‹™•v‚ÍwŒ³‚Ü‚Å‹z‚¢‚Â‚­‚µ‚½‰Œ‘‚ğ‘Á‚Æˆê‚ÉÌ‚Ä‚½BŠª‰Œ‘‚Í‚¨‚Ç‚¯‚½‚æ‚¤‚ÉAFX‚É‚Ğ‚Á‚­‚è‚©‚¦‚Á‚ÄA‚‚¢‘D• ‚ğ‚·‚ê‚¸‚ê‚É—‚¿‚Äs‚Á‚½B”Ş‚Íg‘Ìˆê”tğL‚©‚Á‚½B</p>
+<main>
+    <h1>å•é¡Œæ–‡ã®è¡¨ç¤º</h1>
+    <p>æ–‡å­—ã‚³ãƒ¼ãƒ‰ã‚’é¸ã‚“ã§ã€è¡¨ç¤ºã‚’åˆ‡ã‚Šæ›¿ãˆã¦ã¿ã¾ã—ã‚‡ã†ã€‚</p>
+    <div class="encoding-options" aria-label="æ–‡å­—ã‚³ãƒ¼ãƒ‰">
+        <button type="button" data-encoding="utf-8" aria-pressed="true" disabled>UTF-8</button>
+        <button type="button" data-encoding="euc-jp" aria-pressed="false" disabled>EUC-JP</button>
+        <button type="button" data-encoding="iso-2022-jp" aria-pressed="false" disabled>ISO-2022-JP</button>
+        <button type="button" data-encoding="shift_jis" aria-pressed="false" disabled>Shift_JIS</button>
+    </div>
+    <p id="status" role="status" aria-live="polite">å•é¡Œæ–‡ã‚’èª­ã¿è¾¼ã‚“ã§ã„ã¾ã™...</p>
+    <pre id="problemText"></pre>
+</main>
+<script>
+const status = document.getElementById("status");
+const problemText = document.getElementById("problemText");
+const buttons = Array.from(document.querySelectorAll("[data-encoding]"));
+let sourceBytes;
+
+function showText(encoding) {
+    try {
+        const decoded = new TextDecoder(encoding).decode(sourceBytes);
+        const sourceDocument = new DOMParser().parseFromString(decoded, "text/html");
+        problemText.textContent = sourceDocument.body.textContent.trim();
+        status.textContent = `${encoding}ã§è¡¨ç¤ºã—ã¦ã„ã¾ã™ã€‚`;
+        buttons.forEach((button) => {
+            button.setAttribute(
+                "aria-pressed",
+                String(button.dataset.encoding === encoding)
+            );
+        });
+    } catch (error) {
+        status.textContent = `${encoding}ã§è¡¨ç¤ºã§ãã¾ã›ã‚“ã§ã—ãŸ: ${error.message}`;
+    }
+}
+
+buttons.forEach((button) => {
+    button.addEventListener("click", () => showText(button.dataset.encoding));
+});
+
+fetch("encoding-error-source.html")
+    .then((response) => {
+        if (!response.ok) {
+            throw new Error(`å•é¡Œæ–‡ã‚’èª­ã¿è¾¼ã‚ã¾ã›ã‚“ã§ã—ãŸï¼ˆHTTP ${response.status}ï¼‰ã€‚`);
+        }
+        return response.arrayBuffer();
+    })
+    .then((buffer) => {
+        sourceBytes = buffer;
+        buttons.forEach((button) => {
+            button.disabled = false;
+        });
+        showText("utf-8");
+    })
+    .catch((error) => {
+        status.textContent = error.message;
+    });
+</script>
 </body>
 </html>

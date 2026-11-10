@@ -12,9 +12,6 @@
         <h1>課題一覧</h1>
         <p id="playerInfo" class="player-name"></p>
         <div id="timer" class="timer"></div>
-        <p>例題は練習用で、クリア条件とクラス平均に含みません。</p>
-        <h2>例題</h2>
-        <div id="exampleArea" class="button-grid"></div>
         <h2>暗号解読課題（8問）</h2>
         <div id="challengeArea" class="button-grid"></div>
         <h2>7：ソーシャルエンジニアリング</h2>
@@ -31,7 +28,9 @@
 <script>
 if (Game.guardSession()) {
     document.getElementById("playerInfo").textContent =
-        `クラス：${localStorage.getItem("className") || ""}　出席番号：${localStorage.getItem("studentNumber") || ""}`;
+        localStorage.getItem("className") === "教員"
+            ? `教員：${localStorage.getItem("studentNumber") || ""}`
+            : `クラス：${localStorage.getItem("className") || ""}　出席番号：${localStorage.getItem("studentNumber") || ""}`;
     Game.startTimer(document.getElementById("timer"));
     Game.renderProgress(document.getElementById("progressArea"));
 
@@ -45,11 +44,6 @@ if (Game.guardSession()) {
         });
         area.append(button);
     };
-    addPuzzleButton(
-        GAME_PUZZLES.find((puzzle) => puzzle.id === "example"),
-        document.getElementById("exampleArea"),
-        false
-    );
     GAME_PUZZLES.filter((puzzle) => puzzle.counted && puzzle.section === "課題")
         .forEach((puzzle) => addPuzzleButton(
             puzzle,

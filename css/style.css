@@ -138,6 +138,26 @@ button:disabled {
     color: #555;
 }
 
+.social-note {
+    margin: 20px 0;
+    padding: 14px 18px;
+    border-left: 6px solid #d59b24;
+    border-radius: 6px;
+    background: #fff6df;
+    color: #49360d;
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+.social-note p {
+    margin: 4px 0;
+}
+
+.social-note-emphasis {
+    font-size: 1.2rem;
+}
+
 .player-name {
     text-align: center;
     font-weight: bold;

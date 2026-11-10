@@ -17,16 +17,29 @@
             <button id="answerButton" type="submit">回答する</button>
         </form>
         <p id="answerStatus" class="notice" role="status" aria-live="polite"></p>
-        <h2>進行状況</h2>
-        <div id="progressArea" class="progress-box"></div>
-        <button class="back-btn" type="button" onclick="location.href='start.html'">課題一覧へ戻る</button>
+        <section id="progressSection">
+            <h2>進行状況</h2>
+            <div id="progressArea" class="progress-box"></div>
+        </section>
+        <button id="challengeBackButton" class="back-btn" type="button">課題一覧へ戻る</button>
     </section>
 </main>
 <script src="js/config.js"></script>
 <script src="js/puzzles.js"></script>
 <script src="js/common.js"></script>
 <script>
-if (Game.guardSession()) {
+const challengeParams = new URLSearchParams(location.search);
+const isPracticeExample =
+    challengeParams.get("id") === "example" &&
+    challengeParams.get("practice") === "true";
+document.getElementById("challengeBackButton").addEventListener("click", () => {
+    location.href = isPracticeExample ? "index.html" : "start.html";
+});
+if (isPracticeExample) {
+    document.getElementById("timer").hidden = true;
+    document.getElementById("progressSection").hidden = true;
+    Game.renderChallenge();
+} else if (Game.guardSession()) {
     Game.startTimer(document.getElementById("timer"));
     Game.renderProgress(document.getElementById("progressArea"));
     Game.renderChallenge();

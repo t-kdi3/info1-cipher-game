@@ -150,6 +150,7 @@ window.Game = (() => {
 
     function renderProgress(element) {
         const solved = solvedMap();
+        const solvedTimes = solvedTimesMap();
         element.replaceChildren();
         countedPuzzles.forEach((puzzle) => {
             const row = document.createElement("div");
@@ -157,8 +158,14 @@ window.Game = (() => {
             const title = document.createElement("span");
             title.textContent = puzzle.title;
             const state = document.createElement("span");
-            state.textContent = solved[puzzle.id] ? "正解" : "未クリア";
-            if (solved[puzzle.id]) state.className = "solved";
+            if (solved[puzzle.id]) {
+                state.textContent = Number.isFinite(Number(solvedTimes[puzzle.id]))
+                    ? `正解（${formatSeconds(solvedTimes[puzzle.id])}）`
+                    : "正解";
+                state.className = "solved";
+            } else {
+                state.textContent = "未クリア";
+            }
             row.append(title, state);
             element.append(row);
         });
@@ -184,6 +191,9 @@ window.Game = (() => {
     function renderChallenge() {
         const puzzleId = new URLSearchParams(location.search).get("id");
         const puzzle = window.GAME_PUZZLES.find((item) => item.id === puzzleId);
+        const isPracticeExample =
+            puzzleId === "example" &&
+            new URLSearchParams(location.search).get("practice") === "true";
         const title = document.getElementById("challengeTitle");
         const question = document.getElementById("question");
         const status = document.getElementById("answerStatus");
@@ -258,7 +268,7 @@ window.Game = (() => {
             question.append(textFrame, openLink);
         }
         const solved = solvedMap();
-        if (solved[puzzle.id]) {
+        if (solved[puzzle.id] && !isPracticeExample) {
             status.textContent = "この課題は正解済みです。";
             form.hidden = true;
             return;
@@ -282,7 +292,7 @@ window.Game = (() => {
 
         form.addEventListener("submit", (event) => {
             event.preventDefault();
-            if (!guardSession()) return;
+            if (!isPracticeExample && !guardSession()) return;
             const enteredAnswers = Array.from(
                 answerFieldContainer.querySelectorAll("input"),
                 (input) => puzzle.answerFormat
@@ -326,11 +336,18 @@ window.Game = (() => {
                 status.textContent = "不正解です。もう一度考えてみてください。";
                 return;
             }
+            if (isPracticeExample) {
+                status.textContent = "正解です。例題は練習用です。";
+                form.hidden = true;
+                return;
+            }
             solved[puzzle.id] = true;
             localStorage.setItem("solvedPuzzles", JSON.stringify(solved));
             const puzzleTimes = solvedTimesMap();
             puzzleTimes[puzzle.id] = Math.floor((Date.now() - startedAt()) / 1000);
             localStorage.setItem("solvedPuzzleTimes", JSON.stringify(puzzleTimes));
+            const progressArea = document.getElementById("progressArea");
+            if (progressArea) renderProgress(progressArea);
             if (solvedCount() === countedPuzzles.length) {
                 finish("complete");
                 return;

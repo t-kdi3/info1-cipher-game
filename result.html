@@ -35,8 +35,12 @@ if (!result) {
     document.getElementById("resultTitle").textContent =
         result.status === "complete" ? "全問クリア！" : "タイムアップ";
     [
-        `クラス：${result.className}`,
-        `出席番号：${result.studentNumber}`,
+        result.className === "教員"
+            ? `参加区分：教員`
+            : `クラス：${result.className}`,
+        result.className === "教員"
+            ? `氏名：${result.studentNumber}`
+            : `出席番号：${result.studentNumber}`,
         `正答数：${result.solvedCount}/${result.totalCount}`,
         `経過時間：${Game.formatSeconds(result.elapsedSeconds)}`
     ].forEach((value) => {
@@ -44,6 +48,20 @@ if (!result) {
         line.textContent = value;
         summary.append(line);
     });
+    const solvedPuzzleTimes = GAME_PUZZLES.filter((puzzle) =>
+        puzzle.counted && Number.isFinite(Number(result.puzzleTimes?.[puzzle.id]))
+    );
+    if (solvedPuzzleTimes.length) {
+        const heading = document.createElement("h2");
+        heading.textContent = "問題別クリア時間";
+        summary.append(heading);
+        solvedPuzzleTimes.forEach((puzzle) => {
+            const line = document.createElement("p");
+            line.textContent =
+                `${puzzle.title}：${Game.formatSeconds(result.puzzleTimes[puzzle.id])}`;
+            summary.append(line);
+        });
+    }
     submitButton.addEventListener("click", () => {
         Game.submitResult(result, submitStatus, submitButton);
     });
